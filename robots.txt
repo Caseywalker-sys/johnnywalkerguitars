@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://johnnywalkerclassicalguitars.com/sitemap.xml
