@@ -275,8 +275,19 @@
 
     .guitars-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 2.5rem;
+      max-width: 800px;
+    }
+
+    /* Center the grid when only 1-2 cards */
+    .guitars-grid:has(> :last-child:nth-child(1)) {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .guitars-grid:has(> :last-child:nth-child(2)) {
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .guitar-card {
@@ -292,8 +303,10 @@
 
     .guitar-card-img {
       width: 100%;
-      height: 280px;
+      height: auto;
+      aspect-ratio: 3 / 4;
       object-fit: cover;
+      object-position: center top;
       display: block;
       background: var(--parchment);
     }
