@@ -1173,21 +1173,54 @@
         </div>
       </div>
 
-      <form class="contact-form" onsubmit="event.preventDefault(); alert('Thank you! Johnny will be in touch soon.');">
+      <!-- Contact form via Formspree (free tier: 50 submissions/month) -->
+      <!-- To activate: sign up at formspree.io, create a form, replace YOUR_FORM_ID below -->
+      <form class="contact-form" id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
         <div>
           <label for="name">Your Name</label>
-          <input type="text" id="name" placeholder="Full name" required>
+          <input type="text" id="name" name="name" placeholder="Full name" required>
         </div>
         <div>
           <label for="email">Email Address</label>
-          <input type="email" id="email" placeholder="you@email.com" required>
+          <input type="email" id="email" name="email" placeholder="you@email.com" required>
         </div>
         <div>
           <label for="message">Message</label>
-          <textarea id="message" placeholder="Tell me about what you're looking for..."></textarea>
+          <textarea id="message" name="message" placeholder="Tell me about what you're looking for..."></textarea>
         </div>
         <button type="submit">Send Message</button>
+        <p id="formStatus" style="font-size:0.9rem;color:var(--gold-light);margin-top:0.5rem;display:none;"></p>
       </form>
+      <script>
+        const form = document.getElementById('contactForm');
+        const status = document.getElementById('formStatus');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = form.querySelector('button');
+          btn.textContent = 'Sending...';
+          btn.disabled = true;
+          try {
+            const resp = await fetch(form.action, {
+              method: 'POST',
+              body: new FormData(form),
+              headers: { 'Accept': 'application/json' }
+            });
+            if (resp.ok) {
+              status.textContent = 'Message sent! Johnny will be in touch soon.';
+              status.style.display = 'block';
+              form.reset();
+            } else {
+              status.textContent = 'Something went wrong. Please email or call directly.';
+              status.style.display = 'block';
+            }
+          } catch {
+            status.textContent = 'Something went wrong. Please email or call directly.';
+            status.style.display = 'block';
+          }
+          btn.textContent = 'Send Message';
+          btn.disabled = false;
+        });
+      </script>
 
     </div>
   </div>
@@ -1213,7 +1246,21 @@
     a.addEventListener('click', () => nav.classList.remove('mobile-open'));
   });
 
-  // Sample guitar data — replace with Google Sheets fetch or guitars.json
+  // ── Google Sheets Integration ──────────────────────────
+  // HOW TO SET UP:
+  // 1. Create a Google Sheet with columns: Name, Model, Price, Description, Specs, Status, Image
+  // 2. Go to File > Share > Publish to web > Entire Document > CSV > Publish
+  // 3. Copy the URL and paste it below (replace YOUR_SHEET_ID)
+  //
+  // Example row: Cocobolo Grand Concert | Grand Concert Classical | $5,800 | Stunning cocobolo... | Cocobolo, Euro. Spruce, 650mm | available | photos/guitar1.jpg
+  //
+  // The "Specs" column should be comma-separated tags.
+  // The "Status" column should be "available" or "sold".
+  // The "Image" column can be a filename (from the images/ folder) or a full URL.
+
+  const SHEET_CSV_URL = ''; // <-- Paste your published Google Sheet CSV URL here
+
+  // Fallback sample data (shown when no Google Sheet is connected)
   const sampleGuitars = [
     {
       name: "Cocobolo Grand Concert",
@@ -1243,6 +1290,38 @@
       image: ""
     }
   ];
+
+  function parseCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+    return lines.slice(1).map(line => {
+      // Handle commas inside quoted fields
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQuotes = !inQuotes; }
+        else if (line[i] === ',' && !inQuotes) { values.push(current.trim()); current = ''; }
+        else { current += line[i]; }
+      }
+      values.push(current.trim());
+      const row = {};
+      headers.forEach((h, i) => row[h] = values[i] || '');
+      return row;
+    }).filter(row => row.name);
+  }
+
+  function sheetRowToGuitar(row) {
+    return {
+      name: row.name || '',
+      model: row.model || '',
+      price: row.price || '',
+      description: row.description || '',
+      specs: (row.specs || '').split(',').map(s => s.trim()).filter(Boolean),
+      status: (row.status || 'available').toLowerCase().trim(),
+      image: row.image || ''
+    };
+  }
 
   function renderGuitars(guitars) {
     const grid = document.getElementById('guitarsGrid');
@@ -1276,8 +1355,18 @@
     `).join('');
   }
 
-  // Render sample data for preview
-  renderGuitars(sampleGuitars);
+  // Load guitars: try Google Sheet first, fall back to sample data
+  if (SHEET_CSV_URL) {
+    fetch(SHEET_CSV_URL)
+      .then(r => r.text())
+      .then(csv => {
+        const guitars = parseCSV(csv).map(sheetRowToGuitar);
+        renderGuitars(guitars.length ? guitars : sampleGuitars);
+      })
+      .catch(() => renderGuitars(sampleGuitars));
+  } else {
+    renderGuitars(sampleGuitars);
+  }
 </script>
 
 </body>
