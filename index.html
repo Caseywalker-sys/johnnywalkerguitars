@@ -770,6 +770,50 @@
       background: var(--gold-light);
     }
 
+    /* ── Lightbox ─────────────────────────────────────────── */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .lightbox.open {
+      display: flex;
+    }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      cursor: default;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      line-height: 1;
+    }
+    .lightbox-close:hover { opacity: 1; }
+
+    .guitar-card-img[src] {
+      cursor: pointer;
+    }
+
     /* ── Footer ───────────────────────────────────────────── */
     footer {
       background: var(--brown-900);
@@ -1217,6 +1261,12 @@
   </div>
 </section>
 
+<!-- ── Lightbox ────────────────────────────────────────── -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close">&times;</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 <!-- ── Footer ─────────────────────────────────────────── -->
 <footer>
   <div class="container">
@@ -1327,7 +1377,7 @@
     grid.innerHTML = guitars.map(g => `
       <div class="guitar-card">
         ${g.image
-          ? `<img class="guitar-card-img" src="${g.image}" alt="${g.name}">`
+          ? `<img class="guitar-card-img" src="${g.image}" alt="${g.name}" onclick="openLightbox(this.src, this.alt)">`
           : `<div class="guitar-card-img" style="display:flex;align-items:center;justify-content:center;color:var(--brown-400);font-size:0.85rem;">Photo coming soon</div>`
         }
         <div class="guitar-card-body">
@@ -1358,6 +1408,31 @@
   } else {
     renderGuitars(sampleGuitars);
   }
+
+  // ── Lightbox ───────────────────────────────────────────
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt || '';
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  lightbox.addEventListener('click', (e) => {
+    if (e.target !== lightboxImg) {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
 </script>
 
 </body>
